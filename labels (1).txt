@@ -1,6 +1,7 @@
 BACKGROUND
 Bird
 Dog
+Human
 Leopard Cat
 Racoon
 Siberian Chipmunk
