@@ -101,21 +101,31 @@ class KalmanFilterXYAH:
         P = np.diag([10, 10, 1e-1, 10, 100, 100, 1e-2, 100]).astype(np.float32)
         return mean, P
 
-    def predict(self, mean, P):
-        mean = self._F @ mean
-        P = self._F @ P @ self._F.T + self._Q
+   def predict(self, mean, P):
+        # mean = self._F @ mean
+        mean = np.dot(self._F, mean)
+        # P = self._F @ P @ self._F.T + self._Q
+        P = np.dot(np.dot(self._F, P), self._F.T) + self._Q
         return mean, P
 
     def project(self, mean, P):
-        S = self._H @ P @ self._H.T + self._R
-        z = self._H @ mean
+        # S = self._H @ P @ self._H.T + self._R
+        S = np.dot(np.dot(self._H, P), self._H.T) + self._R
+        # z = self._H @ mean
+        z = np.dot(self._H, mean)
         return z, S
 
     def update(self, mean, P, z_obs):
         z_pred, S = self.project(mean, P)
-        K = P @ self._H.T @ np.linalg.inv(S)
-        mean = mean + K @ (z_obs - z_pred)
-        P = (self._I8 - K @ self._H) @ P
+        # K = P @ self._H.T @ np.linalg.inv(S)
+        # 더 안정적으로: solve(S, (H P)^T).T
+        HP = np.dot(self._H, P)           # (4x8)
+        K  = np.linalg.solve(S, HP).T     # (8x4)
+        # mean = mean + K @ (z_obs - z_pred)
+        mean = mean + np.dot(K, (z_obs - z_pred))
+        # P = (self._I8 - K @ self._H) @ P
+        KH = np.dot(K, self._H)
+        P  = np.dot((self._I8 - KH), P)
         return mean, P
 
 # =========================
@@ -451,3 +461,4 @@ finally:
     try: player.stop()
     except: pass
     print("Done.")
+
